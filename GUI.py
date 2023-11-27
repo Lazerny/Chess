@@ -377,5 +377,5 @@ if __name__ == '__main__':
     sw = SecondWindow()  # Second window
     mw = Main()  # Main window
     r = Reference()  # Reference
-    sw.show()
+    fw.show()
     sys.exit(app.exec_())
