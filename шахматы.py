@@ -1,10 +1,11 @@
+import stockfish
+
 # скачать картинки: https://disk.yandex.ru/d/yBSyEyOMVCguwg
 WHITE = 1
 BLACK = 2
 cords_black_king = (7, 4)
 cords_white_king = (0, 4)
 
-from stockfish import Stockfish
 
 def change_cords_king(var, i, j):
     global cords_black_king
@@ -136,6 +137,7 @@ class Board:
                             return True
                         step_r = 1 if (row1 >= row) else -1
                         step_c = 1 if (col1 >= col) else -1
+                        # bug
                         while c != col1 and r != row1:
                             if c == col and row == r:
                                 line = True
@@ -353,10 +355,10 @@ class Board:
             return False
 
         if self.field[row1][col1] is None:
-            if not piece.can_move(self, row, col, row1, col1): # если фигура не может сходить в клетку row1, col1
+            if not piece.can_move(self, row, col, row1, col1):  # если фигура не может сходить в клетку row1, col1
                 return False
         elif self.field[row1][col1].get_color() == opponent(piece.get_color()):
-            if not piece.can_attack(self, row, col, row1, col1): # если не может съесть фигуру
+            if not piece.can_attack(self, row, col, row1, col1):  # если не может съесть фигуру
                 return False
         else:
             return False

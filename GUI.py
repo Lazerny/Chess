@@ -1,4 +1,4 @@
-import sqlite3
+from database import DatabaseManager
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QStatusBar, QGridLayout
 from PyQt5.QtGui import QPixmap
@@ -44,7 +44,8 @@ class Main(QWidget):
         self.label_background.setPixmap(self.pixmap_background)
         self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
-    def start_and_get_info(self, color, login):
+    def start_and_get_info(self, color, login, play_with_bot):
+        self.play_with_bot = play_with_bot
         self.board = Board(color)
         self.print_board(self.board)
         self.color = color
@@ -94,7 +95,6 @@ class Main(QWidget):
                 # print(f"cord1: {self.cord1}")
                 # print(pos_in_board)
 
-
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.cord2 = (self.x, self.y)
@@ -124,6 +124,10 @@ class Main(QWidget):
             cord_y -= self.height() // 8
 
     def run(self):
+        if self.play_with_bot:
+            print('ход ботик')
+            # wait move from bot by using method from шахматы
+            ...
         row, col = self.get_cord_mouse(self.cord1)
         row1, col1 = self.get_cord_mouse(self.cord2)
         # print(row, col)
@@ -250,7 +254,7 @@ class FirstWindow(QWidget):
 
     def play_with_bot_def(self):
         self.hide()
-        sw.show()
+        swvb.show()
 
     def reference_def(self):
         r.show()
@@ -293,10 +297,9 @@ class SecondWindow(QWidget):
         self.setFixedSize(self.width(), self.height())
         self.pushButton.clicked.connect(self.run)
 
-    def run(self, color):
+    def run(self, color, flag=False):
         try:
             if not self.login.text() and not self.password.text():
-                # self.status_bar.setVisible(True)
                 self.status_bar.showMessage('Введите своё имя и приудмайте пароль!')
             elif not self.password.text():
                 self.status_bar.showMessage('Введите пароль!')
@@ -321,7 +324,7 @@ class SecondWindow(QWidget):
 
                         self.hide()
                         color = 1 if self.White.isChecked() else 2
-                        mw.start_and_get_info(color, self.login.text())
+                        mw.start_and_get_info(color, self.login.text(), flag)
                         mw.show()
                         return
 
@@ -337,38 +340,29 @@ class SecondWindow(QWidget):
 
                 color = 1 if self.White.isChecked() else 2
                 self.hide()
-                mw.start_and_get_info(color, self.login.text())
+                mw.start_and_get_info(color, self.login.text(), flag)
                 mw.show()
         except Exception as e:
             print(e)
 
 
-class DatabaseManager:
-    def __init__(self, db_name='Chess.sqlite'):
-        self.conn = sqlite3.connect(db_name)
-        self.cursor = self.conn.cursor()
+class SecondWindowVsBot(SecondWindow):
+    def initUI(self):
+        uic.loadUi('second window vs bot.ui', self)
+        self.setFixedSize(self.width(), self.height())
+        self.pushButton.clicked.connect(self.run)
+        self.level_bot.valueChanged.connect(self.change_level)
+        self.status_bar = QStatusBar(self)
+        self.status_bar.setGeometry(0, self.height() - 25, self.width(), 25)
+        self.setFixedSize(self.width(), self.height())
+        self.pushButton.clicked.connect(self.run)
 
-    def execute_query(self, query, params=None):
-        try:
-            if params:
-                result = self.cursor.execute(query, params).fetchall()
-            else:
-                result = self.cursor.execute(query)
-            self.conn.commit()
-            return result
+    def change_level(self):
+        self.level.setText(str(self.level_bot.value()))
 
-        except Exception as e:
-            print(e)
+    def run(self, color, flag=True):
+        super().run(color, flag)
 
-    def fetch_data(self, query, params=None):
-        if params:
-            self.cursor.execute(query, params)
-        else:
-            self.cursor.execute(query)
-        return self.cursor.fetchall()
-
-    def close_connection(self):
-        self.conn.close()
 
 
 if __name__ == '__main__':
@@ -377,5 +371,6 @@ if __name__ == '__main__':
     sw = SecondWindow()  # Second window
     mw = Main()  # Main window
     r = Reference()  # Reference
+    swvb = SecondWindowVsBot()
     fw.show()
     sys.exit(app.exec_())
