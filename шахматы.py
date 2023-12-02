@@ -1,4 +1,4 @@
-import stockfish
+from stockfish import Stockfish
 
 # скачать картинки: https://disk.yandex.ru/d/yBSyEyOMVCguwg
 WHITE = 1
@@ -30,10 +30,24 @@ def correct_coords(row, col):
     return 0 <= row < 8 and 0 <= col < 8
 
 
+class Bot:
+    def __init__(self, level):
+        self.stockfish = Stockfish(path="stockfish/stockfish-windows-x86-64-avx2.exe")
+        print(self.stockfish)
+        self.stockfish.set_skill_level(level)
+        self.stockfish.set_fen_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+
+    def get_best_move(self):
+        return self.stockfish.get_best_move()
+
+    def update_position(self, move):
+        self.stockfish.make_moves_from_current_position([move])
+
+
 class Board:
     def __init__(self, color):
+        self.color = WHITE
         if color == 1:
-            self.color = WHITE
             self.field = []
             for row in range(8):
                 self.field.append([None] * 8)
@@ -54,13 +68,12 @@ class Board:
                 King(BLACK), Bishop(BLACK), Knight(BLACK), Rook(BLACK)
             ]
         else:
-            self.color = WHITE
             self.field = []
             for row in range(8):
                 self.field.append([None] * 8)
             self.field[7] = [
-                Rook(WHITE), Knight(WHITE), Bishop(WHITE), Queen(WHITE),
-                King(WHITE), Bishop(WHITE), Knight(WHITE), Rook(WHITE)
+                Rook(WHITE), Knight(WHITE), Bishop(WHITE), King(WHITE),
+                Queen(WHITE), Bishop(WHITE), Knight(WHITE), Rook(WHITE)
             ]
             self.field[6] = [
                 Pawn(WHITE, 6), Pawn(WHITE, 6), Pawn(WHITE, 6), Pawn(WHITE, 6),
@@ -71,8 +84,8 @@ class Board:
                 Pawn(BLACK, 1), Pawn(BLACK, 1), Pawn(BLACK, 1), Pawn(BLACK, 1)
             ]
             self.field[0] = [
-                Rook(BLACK), Knight(BLACK), Bishop(BLACK), Queen(BLACK),
-                King(BLACK), Bishop(BLACK), Knight(BLACK), Rook(BLACK)
+                Rook(BLACK), Knight(BLACK), Bishop(BLACK), King(BLACK),
+                Queen(BLACK), Bishop(BLACK), Knight(BLACK), Rook(BLACK)
             ]
 
     # def __str__(self):

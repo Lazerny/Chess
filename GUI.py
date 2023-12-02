@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLa
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QEventLoop, QCoreApplication, QEvent
 from PyQt5 import uic
-from шахматы import Board, opponent
+from шахматы import Board, opponent, Bot
 
 
 class Main(QWidget):
@@ -44,8 +44,10 @@ class Main(QWidget):
         self.label_background.setPixmap(self.pixmap_background)
         self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
-    def start_and_get_info(self, color, login, play_with_bot):
+    def start_and_get_info(self, color, login, play_with_bot, level_bot):
         self.play_with_bot = play_with_bot
+        if self.play_with_bot:
+            self.bot = Bot(level_bot)
         self.board = Board(color)
         self.print_board(self.board)
         self.color = color
@@ -124,14 +126,49 @@ class Main(QWidget):
             cord_y -= self.height() // 8
 
     def run(self):
-        if self.play_with_bot:
-            print('ход ботик')
-            # wait move from bot by using method from шахматы
-            ...
-        row, col = self.get_cord_mouse(self.cord1)
-        row1, col1 = self.get_cord_mouse(self.cord2)
-        # print(row, col)
-        # print(row1, col1)
+        dict_names_col = {0: 'a',
+                          1: 'b',
+                          2: 'c',
+                          3: 'd',
+                          4: 'e',
+                          5: 'f',
+                          6: 'g',
+                          7: 'h'}
+
+        dict_names_col_rev = {'a': 0,
+                              'b': 1,
+                              'c': 2,
+                              'd': 3,
+                              'e': 4,
+                              'f': 5,
+                              'g': 6,
+                              'h': 7}
+        if self.color != self.board.color and self.play_with_bot:
+            move = self.bot.get_best_move()
+            cell1 = move[:2]
+            cell2 = move[2:4]
+            if self.color == 1:
+                col = dict_names_col_rev.get(cell1[0])
+                col1 = dict_names_col_rev.get(cell2[0])
+                row = int(cell1[1]) - 1
+                row1 = int(cell2[1]) - 1
+            else:
+                col = 7 - dict_names_col_rev.get(cell1[0])
+                col1 = 7 - dict_names_col_rev.get(cell2[0])
+                row = 8 - int(cell1[1])
+                row1 = 8 - int(cell2[1])
+        else:  # Обработка хода человека
+            row, col = self.get_cord_mouse(self.cord1)
+            row1, col1 = self.get_cord_mouse(self.cord2)
+            if self.color == 1:
+                move = f"{dict_names_col[col]}{row + 1}{dict_names_col[col1]}{row1 + 1}"
+            else:
+                move = f"{dict_names_col[7 - col]}{8 - row}{dict_names_col[7 - col1]}{8 - row1}"
+
+        if self.color != self.board.color:
+            print('бот сходил:', move)
+        else:
+            print('Ты сходил:', move)
         if row == 0 and col == 4 and row1 == 0 and col1 == 0:
             self.board.castling0()
         elif row == 7 and col == 4 and row1 == 7 and col1 == 0:
@@ -140,7 +177,7 @@ class Main(QWidget):
             self.board.castling7()
         elif row == 7 and col == 4 and row1 == 7 and col1 == 7:
             self.board.castling7()
-        elif row1 == 7 or row1 == 0:
+        elif row1 == 7 or row1 == 0:  # promote pawn
             piece = self.board.field[row][col]
             if piece.char() == 'P' and self.board.move_piece(row, col, row1, col1):
                 # print('Превращение на координате', row1, col1)
@@ -211,7 +248,12 @@ class Main(QWidget):
 
                 self.board.promote_pawn(row1, col1, char)
 
-        self.board.move_piece(row, col, row1, col1)
+        if self.board.move_piece(row, col, row1, col1) and self.play_with_bot:
+            print('обновление позиции')
+            self.bot.update_position(move)
+            print(self.bot.stockfish.get_board_visual(perspective_white=False))
+        else:
+            print(f"Ход {move} невозможен")
         self.print_board(self.board)
         if self.board.checkmate():
             try:
@@ -237,6 +279,8 @@ class Main(QWidget):
             except Exception as e:
                 print(e)
             print('Checkmate!')
+        if self.color != self.board.color and self.play_with_bot:
+            self.run()
 
 
 class FirstWindow(QWidget):
@@ -297,7 +341,7 @@ class SecondWindow(QWidget):
         self.setFixedSize(self.width(), self.height())
         self.pushButton.clicked.connect(self.run)
 
-    def run(self, color, flag=False):
+    def run(self, color, level_bot=0, flag=False):
         try:
             if not self.login.text() and not self.password.text():
                 self.status_bar.showMessage('Введите своё имя и приудмайте пароль!')
@@ -324,7 +368,7 @@ class SecondWindow(QWidget):
 
                         self.hide()
                         color = 1 if self.White.isChecked() else 2
-                        mw.start_and_get_info(color, self.login.text(), flag)
+                        mw.start_and_get_info(color, self.login.text(), flag, level_bot)
                         mw.show()
                         return
 
@@ -340,7 +384,7 @@ class SecondWindow(QWidget):
 
                 color = 1 if self.White.isChecked() else 2
                 self.hide()
-                mw.start_and_get_info(color, self.login.text(), flag)
+                mw.start_and_get_info(color, self.login.text(), flag, level_bot)
                 mw.show()
         except Exception as e:
             print(e)
@@ -350,7 +394,6 @@ class SecondWindowVsBot(SecondWindow):
     def initUI(self):
         uic.loadUi('second window vs bot.ui', self)
         self.setFixedSize(self.width(), self.height())
-        self.pushButton.clicked.connect(self.run)
         self.level_bot.valueChanged.connect(self.change_level)
         self.status_bar = QStatusBar(self)
         self.status_bar.setGeometry(0, self.height() - 25, self.width(), 25)
@@ -360,8 +403,8 @@ class SecondWindowVsBot(SecondWindow):
     def change_level(self):
         self.level.setText(str(self.level_bot.value()))
 
-    def run(self, color, flag=True):
-        super().run(color, flag)
+    def run(self, color, level_bot=0, flag=True):
+        super().run(color, self.level_bot.value(), flag)
 
 
 
