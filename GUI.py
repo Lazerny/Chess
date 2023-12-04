@@ -1,6 +1,6 @@
 from database import DatabaseManager
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QStatusBar, QGridLayout
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QLabel, QStatusBar
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QEventLoop, QCoreApplication, QEvent
 from PyQt5 import uic
@@ -125,133 +125,154 @@ class Main(QWidget):
                 cord_x += self.width() // 8
             cord_y -= self.height() // 8
 
-    def run(self):
-        dict_names_col = {0: 'a',
-                          1: 'b',
-                          2: 'c',
-                          3: 'd',
-                          4: 'e',
-                          5: 'f',
-                          6: 'g',
-                          7: 'h'}
+    def handle_castling(self, row, col, row1, col1, move):
+        def update_pos():
+            if self.play_with_bot:
+                self.bot.update_position(move)
 
-        dict_names_col_rev = {'a': 0,
-                              'b': 1,
-                              'c': 2,
-                              'd': 3,
-                              'e': 4,
-                              'f': 5,
-                              'g': 6,
-                              'h': 7}
-        if self.color != self.board.color and self.play_with_bot:
-            move = self.bot.get_best_move()
-            cell1 = move[:2]
-            cell2 = move[2:4]
-            if self.color == 1:
-                col = dict_names_col_rev.get(cell1[0])
-                col1 = dict_names_col_rev.get(cell2[0])
-                row = int(cell1[1]) - 1
-                row1 = int(cell2[1]) - 1
-            else:
-                col = 7 - dict_names_col_rev.get(cell1[0])
-                col1 = 7 - dict_names_col_rev.get(cell2[0])
-                row = 8 - int(cell1[1])
-                row1 = 8 - int(cell2[1])
-        else:  # Обработка хода человека
-            row, col = self.get_cord_mouse(self.cord1)
-            row1, col1 = self.get_cord_mouse(self.cord2)
-            if self.color == 1:
-                move = f"{dict_names_col[col]}{row + 1}{dict_names_col[col1]}{row1 + 1}"
-            else:
-                move = f"{dict_names_col[7 - col]}{8 - row}{dict_names_col[7 - col1]}{8 - row1}"
-
-        if self.color != self.board.color:
-            print('бот сходил:', move)
+        if self.color == 1:
+            if (row == 0 and col == 4 and row1 == 0 and (col1 == 0 or col1 == 1 or col1 == 2)) or (
+                    row == 7 and col == 4 and row1 == 7 and (col1 == 0 or col1 == 1 or col1 == 2)):
+                if self.board.castling_long(row, 4, 0):
+                    update_pos()
+            elif (row == 0 and col == 4 and row1 == 0 and (col1 == 7 or col1 == 6)) or (
+                    row == 7 and col == 4 and row1 == 7 and (col1 == 7 or col1 == 6)):
+                if self.board.castling_short(row, 4, 7):
+                    update_pos()
         else:
-            print('Ты сходил:', move)
-        if row == 0 and col == 4 and row1 == 0 and col1 == 0:
-            self.board.castling0()
-        elif row == 7 and col == 4 and row1 == 7 and col1 == 0:
-            self.board.castling0()
-        elif row == 0 and col == 4 and row1 == 0 and col1 == 7:
-            self.board.castling7()
-        elif row == 7 and col == 4 and row1 == 7 and col1 == 7:
-            self.board.castling7()
-        elif row1 == 7 or row1 == 0:  # promote pawn
+            if (row == 0 and col == 3 and row1 == 0 and (col1 == 7 or col1 == 6 or col1 == 5)) or (
+                    row == 7 and col == 3 and row1 == 7 and (col1 == 5 or col1 == 6 or col1 == 7)):
+                if self.board.castling_long(row, 3, 7):
+                    update_pos()
+            elif (row == 0 and col == 3 and row1 == 0 and (col1 == 0 or col1 == 1)) or (
+                    row == 7 and col == 3 and row1 == 7 and (col1 == 0 or col1 == 1)):
+                if self.board.castling_short(row, 3, 0):
+                    update_pos()
+
+    def handle_bot_move(self, col_names_rev):
+        move = self.bot.get_best_move()
+        cell1 = move[:2]
+        cell2 = move[2:4]
+        if self.color == 1:
+            col = col_names_rev.get(cell1[0])
+            col1 = col_names_rev.get(cell2[0])
+            row = int(cell1[1]) - 1
+            row1 = int(cell2[1]) - 1
+        else:
+            col = 7 - col_names_rev.get(cell1[0])
+            col1 = 7 - col_names_rev.get(cell2[0])
+            row = 8 - int(cell1[1])
+            row1 = 8 - int(cell2[1])
+        return row, col, row1, col1, move
+
+    def handle_human_move(self, col_names):
+        row, col = self.get_cord_mouse(self.cord1)
+        row1, col1 = self.get_cord_mouse(self.cord2)
+        if self.color == 1:
+            move = f"{col_names[col]}{row + 1}{col_names[col1]}{row1 + 1}"
+        else:
+            move = f"{col_names[7 - col]}{8 - row}{col_names[7 - col1]}{8 - row1}"
+        return row, col, row1, col1, move
+
+    def run(self):
+        names_col = {0: 'a',
+                     1: 'b',
+                     2: 'c',
+                     3: 'd',
+                     4: 'e',
+                     5: 'f',
+                     6: 'g',
+                     7: 'h'}
+
+        names_col_rew = {'a': 0,
+                         'b': 1,
+                         'c': 2,
+                         'd': 3,
+                         'e': 4,
+                         'f': 5,
+                         'g': 6,
+                         'h': 7}
+        if self.color != self.board.color and self.play_with_bot:
+            row, col, row1, col1, move = self.handle_bot_move(names_col_rew)
+        else:
+            row, col, row1, col1, move = self.handle_human_move(names_col)
+        self.handle_castling(row, col, row1, col1, move)
+
+        if row1 == 7 or row1 == 0:  # promote pawn
             piece = self.board.field[row][col]
-            if piece.char() == 'P' and self.board.move_piece(row, col, row1, col1):
-                # print('Превращение на координате', row1, col1)
-                color_who_promote = 'w' if opponent(self.board.color) == 1 else 'b'
-                step = self.width() // 8
-                top_left_point_x = step * col1
-                top_left_point_y = step * (7 - row1)
+            if piece:
+                if piece.char() == 'P' and self.board.move_piece(row, col, row1, col1):
+                    # print('Превращение на координате', row1, col1)
+                    color_who_promote = 'w' if opponent(self.board.color) == 1 else 'b'
+                    step = self.width() // 8
+                    top_left_point_x = step * col1
+                    top_left_point_y = step * (7 - row1)
 
-                pixmaps_for_pieces_which_we_choose = {
-                    'wQ': QPixmap('ChessImage/Choose_piece/whiteQueen.png'),
-                    'wR': QPixmap('ChessImage/Choose_piece/whiteRook.png'),
-                    'wN': QPixmap('ChessImage/Choose_piece/whiteKnight.png'),
-                    'wB': QPixmap('ChessImage/Choose_piece/whiteBishop.png'),
-                    'bQ': QPixmap('ChessImage/Choose_piece/blackQueen.png'),
-                    'bR': QPixmap('ChessImage/Choose_piece/blackRook.png'),
-                    'bN': QPixmap('ChessImage/Choose_piece/blackKnight.png'),
-                    'bB': QPixmap('ChessImage/Choose_piece/blackBishop.png'),
-                }
-                names = [color_who_promote + 'Q',
-                         color_who_promote + 'R',
-                         color_who_promote + 'B',
-                         color_who_promote + 'N']
-                n = 0
-                list_to_clear = []
-                if row1 == 7:
-                    for y in range(0, step * 4, step):
-                        label = QLabel(self)
-                        label.setPixmap(
-                            pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
-                        label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
-                        list_to_clear.append(label)
-                        label.show()
-                        n += 1
-                else:
-                    for y in range(top_left_point_y, top_left_point_y - step * 4, -step):
-                        label = QLabel(self)
-                        label.setPixmap(
-                            pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
-                        label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
-                        list_to_clear.append(label)
-                        label.show()
-                        n += 1
+                    pixmaps_for_pieces_which_we_choose = {
+                        'wQ': QPixmap('ChessImage/Choose_piece/whiteQueen.png'),
+                        'wR': QPixmap('ChessImage/Choose_piece/whiteRook.png'),
+                        'wN': QPixmap('ChessImage/Choose_piece/whiteKnight.png'),
+                        'wB': QPixmap('ChessImage/Choose_piece/whiteBishop.png'),
+                        'bQ': QPixmap('ChessImage/Choose_piece/blackQueen.png'),
+                        'bR': QPixmap('ChessImage/Choose_piece/blackRook.png'),
+                        'bN': QPixmap('ChessImage/Choose_piece/blackKnight.png'),
+                        'bB': QPixmap('ChessImage/Choose_piece/blackBishop.png'),
+                    }
+                    names = [color_who_promote + 'Q',
+                             color_who_promote + 'R',
+                             color_who_promote + 'B',
+                             color_who_promote + 'N']
+                    n = 0
+                    list_to_clear = []
+                    if row1 == 7:
+                        for y in range(0, step * 4, step):
+                            label = QLabel(self)
+                            label.setPixmap(
+                                pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
+                            label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
+                            list_to_clear.append(label)
+                            label.show()
+                            n += 1
+                    else:
+                        for y in range(top_left_point_y, top_left_point_y - step * 4, -step):
+                            label = QLabel(self)
+                            label.setPixmap(
+                                pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
+                            label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
+                            list_to_clear.append(label)
+                            label.show()
+                            n += 1
 
-                choose_piese = False
-                try:
-                    while not choose_piese:
-                        QApplication.processEvents()
-                        mouse = self.get_cord_mouse(self.cord1)
+                    choose_piese = False
+                    try:
+                        while not choose_piese:
+                            QApplication.processEvents()
+                            mouse = self.get_cord_mouse(self.cord1)
 
-                        piece_mapping = {
-                            (7, col1): 'Q',
-                            (6, col1): 'R',
-                            (5, col1): 'B',
-                            (4, col1): 'N',
-                            (0, col1): 'Q',
-                            (1, col1): 'R',
-                            (2, col1): 'B',
-                            (3, col1): 'N',
-                        }
+                            piece_mapping = {
+                                (7, col1): 'Q',
+                                (6, col1): 'R',
+                                (5, col1): 'B',
+                                (4, col1): 'N',
+                                (0, col1): 'Q',
+                                (1, col1): 'R',
+                                (2, col1): 'B',
+                                (3, col1): 'N',
+                            }
 
-                        if mouse in piece_mapping:
-                            for i in list_to_clear:
-                                i.clear()
-                            char = piece_mapping[mouse]
-                            choose_piese = True
-                except Exception as e:
-                    print(e)
+                            if mouse in piece_mapping:
+                                for i in list_to_clear:
+                                    i.clear()
+                                char = piece_mapping[mouse]
+                                choose_piese = True
+                    except Exception as e:
+                        print(e)
 
-                self.board.promote_pawn(row1, col1, char)
+                    self.board.promote_pawn(row1, col1, char)
 
         if self.board.move_piece(row, col, row1, col1) and self.play_with_bot:
-            print('обновление позиции')
             self.bot.update_position(move)
-            print(self.bot.stockfish.get_board_visual(perspective_white=False))
+            # print(self.bot.stockfish.get_board_visual(perspective_white=True))
         else:
             print(f"Ход {move} невозможен")
         self.print_board(self.board)
@@ -279,6 +300,7 @@ class Main(QWidget):
             except Exception as e:
                 print(e)
             print('Checkmate!')
+        print(row, col)
         if self.color != self.board.color and self.play_with_bot:
             self.run()
 
@@ -405,7 +427,6 @@ class SecondWindowVsBot(SecondWindow):
 
     def run(self, color, level_bot=0, flag=True):
         super().run(color, self.level_bot.value(), flag)
-
 
 
 if __name__ == '__main__':

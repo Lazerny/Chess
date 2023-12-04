@@ -68,6 +68,8 @@ class Board:
                 King(BLACK), Bishop(BLACK), Knight(BLACK), Rook(BLACK)
             ]
         else:
+            cords_white_king = (7, 3)
+            cords_black_king = (0, 3)
             self.field = []
             for row in range(8):
                 self.field.append([None] * 8)
@@ -227,89 +229,77 @@ class Board:
                             return True
         return False
 
-    def castling0(self):
-        if self.current_player_color() == 1:
-            r = self.get_piece(0, 0)
-            k = self.get_piece(0, 4)
-            if r is None or k is None:
-                return False
-            if r.get_color() == 1 and r.char() == 'R' and not r.do_move() \
-                    and k.get_color() == 1 and k.char() == 'K' and not k.do_move() and \
-                    not self.is_under_attack(0, 4, BLACK):
-                for i in range(1, 4):
-                    if not (self.get_piece(0, i) is None):
-                        return False
-                self.field[0][3] = self.field[0][0]
-                self.field[0][2] = self.field[0][4]
-                self.field[0][0] = None
-                self.field[0][4] = None
-                self.color = opponent(self.color)
-                self.field[0][2].first_move()
-                self.field[0][3].first_move()
-                return True
+    def castling_long(self, correct_row, col_king, col_rook):
+        print('0-0-0')
+        r = self.get_piece(correct_row, col_rook)
+        k = self.get_piece(correct_row, col_king)
+        if r is None or k is None:
             return False
-        else:
-            r = self.get_piece(7, 0)
-            k = self.get_piece(7, 4)
-            if r is None or k is None:
-                return False
-            if r.get_color() == 2 and r.char() == 'R' and not r.do_move() \
-                    and k.get_color() == 2 and k.char() == 'K' and not k.do_move() and \
-                    not self.is_under_attack(7, 4, WHITE):
-                for i in range(1, 4):
-                    if not (self.get_piece(7, i) is None):
-                        return False
-                self.field[7][3] = self.field[7][0]
-                self.field[7][2] = self.field[7][4]
-                self.field[7][0] = None
-                self.field[7][4] = None
-                self.color = opponent(self.color)
-                self.field[7][3].first_move()
-                self.field[7][2].first_move()
-                return True
-            return False
+        if r.get_color() == k.get_color() and r.char() == 'R' and not r.do_move() \
+                and k.char() == 'K' and not k.do_move():
 
-    def castling7(self):
-        if self.current_player_color() == WHITE:
-            r = self.get_piece(0, 7)
-            k = self.get_piece(0, 4)
-            if r is None or k is None:
-                return False
-            if r.get_color() == 1 and r.char() == 'R' and not r.do_move() \
-                    and k.get_color() == 1 and k.char() == 'K' and not k.do_move() and \
-                    not self.is_under_attack(0, 4, BLACK):
-                for i in range(5, 7):
-                    if not (self.get_piece(0, i) is None):
-                        return False
-                self.field[0][5] = self.field[0][7]
-                self.field[0][6] = self.field[0][4]
-                self.field[0][7] = None
-                self.field[0][4] = None
-                self.color = opponent(self.color)
-                self.field[0][5].first_move()
-                self.field[0][6].first_move()
-                return True
+            if col_rook > col_king:
+                step = -1
+                col_rook_for_loop = col_rook + step
+            else:
+                step = 1
+                col_rook_for_loop = col_rook + step
+
+            # Не мешают ли фигуры?
+            for i in range(col_rook_for_loop, col_king, step):
+                if not (self.get_piece(correct_row, i) is None):
+                    return False
+
+            # Не находится ли путь короля под боем?
+            for cell in range(col_rook_for_loop + step, col_king + step, step):
+                if self.is_under_attack(correct_row, cell, opponent(k.get_color())):
+                    return False
+            # Рокировка
+            self.field[correct_row][col_king - step] = self.field[correct_row][col_rook]  # rook
+            self.field[correct_row][col_rook_for_loop + step] = self.field[correct_row][col_king]  # king
+            self.field[correct_row][col_rook] = None
+            self.field[correct_row][col_king] = None
+            self.color = opponent(self.color)
+            self.field[correct_row][col_rook_for_loop + step].first_move()
+            self.field[correct_row][col_king - step].first_move()
+            return True
+        return False
+
+    def castling_short(self, correct_row, col_king, col_rook):
+        print('0-0')
+        r = self.get_piece(correct_row, col_rook)
+        k = self.get_piece(correct_row, col_king)
+        if r is None or k is None:
             return False
-        else:
-            r = self.get_piece(7, 7)
-            k = self.get_piece(7, 4)
-            if r is None or k is None:
-                return False
-            if r.get_color() == 2 and r.char() == 'R' and not r.do_move() \
-                    and k.get_color() == 2 and k.char() == 'K' and not k.do_move() and \
-                    not self.is_under_attack(7, 4, WHITE):
-                for i in range(5, 7):
-                    if not (self.get_piece(7, i) is None):
-                        return False
-                self.field[7][5] = self.field[7][7]
-                self.field[7][6] = self.field[7][4]
-                self.field[7][7] = None
-                self.field[7][4] = None
-                self.color = opponent(self.color)
-                self.field[7][5].first_move()
-                self.field[7][6].first_move()
-                return True
-            return False
+        if r.get_color() == k.get_color() and r.char() == 'R' and not r.do_move() \
+                and k.char() == 'K' and not k.do_move():
+
+            if col_rook < col_king:
+                step = -1
+                col_rook_for_loop = col_rook - step
+            else:
+                step = 1
+                col_rook_for_loop = col_rook - step
+
+            # Не мешают ли фигуры?
+            for i in range(col_king + step, col_rook, step):
+                if not (self.get_piece(correct_row, i) is None):
+                    return False
+
+            # Не находится ли путь короля под боем?
+            for cell in range(col_king, col_rook, step):
+                if self.is_under_attack(correct_row, cell, opponent(k.get_color())):
+                    return False
+            # Рокировка
+            self.field[correct_row][col_rook_for_loop - step] = self.field[correct_row][col_rook]  # rook
+            self.field[correct_row][col_rook_for_loop] = self.field[correct_row][col_king]  # king
+            self.field[correct_row][col_rook] = None
+            self.field[correct_row][col_king] = None
+            self.color = opponent(self.color)
+            self.field[correct_row][col_rook_for_loop - step].first_move()
+            self.field[correct_row][col_rook_for_loop].first_move()
+            return True
+        return False
 
     def promote_pawn(self, row1, col1, char):
         if char == 'Q':
@@ -390,6 +380,8 @@ class Board:
             # print(self.color)
             # print('Checkmate!')
             pass
+        if piece.char() == 'R' or piece.char() == 'K':
+            piece.first_move()
         return True
 
 
