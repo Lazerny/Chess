@@ -1,44 +1,13 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
-from PyQt5.QtCore import Qt, QEvent
+import chess
 
-class MyWidget(QWidget):
-    def __init__(self):
-        super().__init__()
+# Создание доски
+board = chess.Board()
 
-        self.setGeometry(100, 100, 400, 300)
-        self.setWindowTitle('Ожидание нажатия левой кнопки мыши')
+# Перевод доски в позицию с патом для белых (для примера)
+board.set_fen("8/8/8/8/8/2k5/8/4K3 b - - 0 1")  # Белый король на e1, черный король на d7, черные ходят
 
-        # Инициализируем флаг для отслеживания нажатия левой кнопки мыши
-        self.left_click_detected = False
-
-        # Добавляем фильтр событий
-        self.installEventFilter(self)
-
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
-            # Обработка события нажатия левой кнопки мыши
-            self.left_click_detected = True
-            return True  # Событие обработано
-
-        return super().eventFilter(obj, event)
-
-    def wait_for_left_click(self):
-        # Создаем цикл, ожидающий нажатия левой кнопки мыши
-        while not self.left_click_detected:
-            QApplication.processEvents()
-
-        # После того, как нажатие было обнаружено, выводим сообщение
-        QMessageBox.information(self, 'Информация', 'Левая кнопка мыши была нажата!')
-
-        # Сбросим флаг для следующего использования
-        self.left_click_detected = False
-
-if __name__ == '__main__':
-    app = QApplication([])
-    widget = MyWidget()
-    widget.show()
-
-    # Ожидаем нажатия левой кнопки мыши
-    widget.wait_for_left_click()
-
-    app.exec_()
+# Проверка на пат
+if board.is_stalemate():
+    print("Доска в пате!")
+else:
+    print("Доска не в пате.")
