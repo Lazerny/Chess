@@ -22,25 +22,27 @@ class Main(QWidget):
         self.setMinimumSize(430, 430)  # Минимальный размер окна
         self.setMaximumSize(1044, 1044)  # Максимальный размер окна
         self.setGeometry(600, 30, 1044, 1044)  # Начальный размер окна
-
+        f = open('theme.txt', 'r')
+        self.root = f.read().split()
+        f.close()
         self.piece_images = {
-            'wQ': QPixmap('ChessImage/whiteQueen.png'),
-            'wR': QPixmap('ChessImage/whiteRook.png'),
-            'wN': QPixmap('ChessImage/whiteKnight.png'),
-            'wB': QPixmap('ChessImage/whiteBishop.png'),
-            'wK': QPixmap('ChessImage/whiteKing.png'),
-            'wP': QPixmap('ChessImage/whitePawn.png'),
-            'bQ': QPixmap('ChessImage/blackQueen.png'),
-            'bR': QPixmap('ChessImage/blackRook.png'),
-            'bN': QPixmap('ChessImage/blackKnight.png'),
-            'bB': QPixmap('ChessImage/blackBishop.png'),
-            'bK': QPixmap('ChessImage/blackKing.png'),
-            'bP': QPixmap('ChessImage/blackPawn.png'),
+            'wQ': QPixmap(f'ChessImage/{self.root[0]}/wQ.png'),
+            'wR': QPixmap(f'ChessImage/{self.root[0]}/wR.png'),
+            'wN': QPixmap(f'ChessImage/{self.root[0]}/wN.png'),
+            'wB': QPixmap(f'ChessImage/{self.root[0]}/wB.png'),
+            'wK': QPixmap(f'ChessImage/{self.root[0]}/wK.png'),
+            'wP': QPixmap(f'ChessImage/{self.root[0]}/wP.png'),
+            'bQ': QPixmap(f'ChessImage/{self.root[0]}/bQ.png'),
+            'bR': QPixmap(f'ChessImage/{self.root[0]}/bR.png'),
+            'bN': QPixmap(f'ChessImage/{self.root[0]}/bN.png'),
+            'bB': QPixmap(f'ChessImage/{self.root[0]}/bB.png'),
+            'bK': QPixmap(f'ChessImage/{self.root[0]}/bK.png'),
+            'bP': QPixmap(f'ChessImage/{self.root[0]}/bP.png'),
         }
 
         #  Создаем QLabel для фонового изображения
         self.label_background = QLabel(self)
-        self.pixmap_background = QPixmap('ChessImage/blue-marble.jpg')
+        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.png')
         self.label_background.setPixmap(self.pixmap_background)
         self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
@@ -52,6 +54,28 @@ class Main(QWidget):
         self.print_board(self.board)
         self.color = color
         self.login = login
+
+    def change_design(self):
+        f = open('theme.txt', 'r')
+        self.root = f.read().split()
+        f.close()
+        self.piece_images = {
+            'wQ': QPixmap(f'ChessImage/{self.root[0]}/wQ.png'),
+            'wR': QPixmap(f'ChessImage/{self.root[0]}/wR.png'),
+            'wN': QPixmap(f'ChessImage/{self.root[0]}/wN.png'),
+            'wB': QPixmap(f'ChessImage/{self.root[0]}/wB.png'),
+            'wK': QPixmap(f'ChessImage/{self.root[0]}/wK.png'),
+            'wP': QPixmap(f'ChessImage/{self.root[0]}/wP.png'),
+            'bQ': QPixmap(f'ChessImage/{self.root[0]}/bQ.png'),
+            'bR': QPixmap(f'ChessImage/{self.root[0]}/bR.png'),
+            'bN': QPixmap(f'ChessImage/{self.root[0]}/bN.png'),
+            'bB': QPixmap(f'ChessImage/{self.root[0]}/bB.png'),
+            'bK': QPixmap(f'ChessImage/{self.root[0]}/bK.png'),
+            'bP': QPixmap(f'ChessImage/{self.root[0]}/bP.png'),
+        }
+        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.png')
+        self.label_background.setPixmap(self.pixmap_background)
+        self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
     def resizeEvent(self, event):
         # масштабирование заднего фона(доски)
@@ -217,14 +241,14 @@ class Main(QWidget):
                         top_left_point_y = step * (7 - row1)
 
                         pixmaps_for_pieces_which_we_choose = {
-                            'wQ': QPixmap('ChessImage/Choose_piece/whiteQueen.png'),
-                            'wR': QPixmap('ChessImage/Choose_piece/whiteRook.png'),
-                            'wN': QPixmap('ChessImage/Choose_piece/whiteKnight.png'),
-                            'wB': QPixmap('ChessImage/Choose_piece/whiteBishop.png'),
-                            'bQ': QPixmap('ChessImage/Choose_piece/blackQueen.png'),
-                            'bR': QPixmap('ChessImage/Choose_piece/blackRook.png'),
-                            'bN': QPixmap('ChessImage/Choose_piece/blackKnight.png'),
-                            'bB': QPixmap('ChessImage/Choose_piece/blackBishop.png'),
+                            'wQ': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wQ.png'),
+                            'wR': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wR.png'),
+                            'wN': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wN.png'),
+                            'wB': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wB.png'),
+                            'bQ': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bQ.png'),
+                            'bR': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bR.png'),
+                            'bN': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bN.png'),
+                            'bB': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bB.png'),
                         }
                         names = [color_who_promote + 'Q',
                                  color_who_promote + 'R',
@@ -320,13 +344,85 @@ class Main(QWidget):
             sm.show()
 
 
+class ChoosePiecesDesign(QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('choose pieces design.ui', self)
+        self.pushButton.clicked.connect(self.change_pieces_1)
+        self.pushButton_2.clicked.connect(self.change_pieces_2)
+        self.get_back.clicked.connect(self.back)
+        self.setFixedSize(self.width(), self.height())
+        self.label.setPixmap(QPixmap('ChessImage/cburnett/bN.png'))
+        self.label_2.setPixmap(QPixmap('ChessImage/riohacha/bN.png'))
+
+    def change_pieces_1(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        board = data.split()[-1]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write('cburnett ' + board)
+        mw.change_design()
+
+    def change_pieces_2(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        board = data.split()[-1]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write('riohacha ' + board)
+        mw.change_design()
+
+    def reference_show(self):
+        self.hide()
+        ss.show()
+
+    def back(self):
+        self.hide()
+        fw.show()
+
+
+class ChooseBoardDesign(QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('choose board design.ui', self)
+        self.pushButton.clicked.connect(self.change_pieces_1)
+        self.pushButton_2.clicked.connect(self.change_pieces_2)
+        self.get_back.clicked.connect(self.back)
+        self.setFixedSize(self.width(), self.height())
+        self.label.setPixmap(QPixmap('ChessImage/cburnett/marble.jpg'))
+        self.label_2.setPixmap(QPixmap('ChessImage/riohacha/marble.jpg'))
+
+    def change_pieces_1(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        piece = data.split()[0]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write(piece + ' cburnett')
+        mw.change_design()
+
+    def change_pieces_2(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        piece = data.split()[0]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write(piece + ' riohacha')
+        mw.change_design()
+
+    def reference_show(self):
+        self.hide()
+        ss.show()
+
+    def back(self):
+        self.hide()
+        fw.show()
+
+
 class FirstWindow(QWidget):
     def __init__(self):
         super().__init__()
         uic.loadUi('first window.ui', self)
         self.playWithFriend.clicked.connect(self.play_with_friend_def)
         self.playWithBot.clicked.connect(self.play_with_bot_def)
-        self.reference.clicked.connect(self.reference_def)
+        self.settings.clicked.connect(self.settings_def)
         self.setFixedSize(self.width(), self.height())
 
     def play_with_friend_def(self):
@@ -337,16 +433,43 @@ class FirstWindow(QWidget):
         self.hide()
         swvb.show()
 
-    def reference_def(self):
+    def settings_def(self):
+        self.hide()
+        ss.show()
+
+
+class Settings(QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('settings.ui', self)
+        self.pieses.clicked.connect(self.change_pieces)
+        self.board.clicked.connect(self.change_board)
+        self.reference.clicked.connect(self.reference_show)
+        self.get_back.clicked.connect(self.back)
+        self.setFixedSize(self.width(), self.height())
+
+    def change_pieces(self):
+        self.hide()
+        pd.show()
+
+    def change_board(self):
+        self.hide()
+        bd.show()
+
+    def reference_show(self):
         r.show()
+
+    def back(self):
+        self.hide()
+        fw.show()
 
 
 class Reference(QWidget):
     def __init__(self):
         super().__init__()
-        self.init_ui()
+        self.initUI()
 
-    def init_ui(self):
+    def initUI(self):
         layout = QVBoxLayout()
         rules_text = self.load_rules_from_file("reference.txt")
         rules_label = QLabel(rules_text)
@@ -483,5 +606,8 @@ if __name__ == '__main__':
     cm = Checkmate()  # Checkmate
     sm = Stalemate()  # Stalemate
     swvb = SecondWindowVsBot()  # SecondWindowVsBot
+    ss = Settings()  # Settings
+    pd = ChoosePiecesDesign()  # Pieces design
+    bd = ChooseBoardDesign()  # Board design
     fw.show()
     sys.exit(app.exec_())
