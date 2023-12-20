@@ -1,12 +1,8 @@
-import pprint
-
-import stockfish
-
 from database import DatabaseManager
 import sys
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QLabel, QStatusBar
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt, QEventLoop, QCoreApplication, QEvent
+from PyQt5.QtCore import Qt
 from PyQt5 import uic
 from шахматы import Board, opponent, Bot
 
@@ -203,7 +199,8 @@ class Main(QWidget):
         else:
             row, col, row1, col1, move = self.handle_human_move(names_col)
         self.handle_castling(row, col, row1, col1, move)
-        if row1 == 7 or row1 == 0:  # promote pawn
+        # promote pawn
+        if row1 == 7 or row1 == 0:
             piece = self.board.field[row][col]
             if piece:
                 if piece.char() == 'P' and self.board.move_piece(row, col, row1, col1):
@@ -211,7 +208,7 @@ class Main(QWidget):
                     color_who_promote = 'w' if opponent(self.board.color) == 1 else 'b'
                     if self.color == self.board.color and self.play_with_bot:  # Если это бот
                         self.bot.update_position(move)
-                        print(move[2:4])
+                        # print(move[2:4])
                         char = self.bot.stockfish.get_what_is_on_square(move[2:4]).value.upper()
 
                     else:
@@ -280,10 +277,11 @@ class Main(QWidget):
                             print(e)
                         if self.play_with_bot:
                             self.bot.update_position(move + char.lower())
-                    print(char.lower())
-                    print(move + char.lower())
+                    # print(char.lower())
+                    # print(move + char.lower())
                     self.board.board_for_track_end.push_san(move + char)
                     self.board.promote_pawn(row1, col1, char)
+        # update position
         if self.board.move_piece(row, col, row1, col1):
             self.board.board_for_track_end.push_san(move)
             # print(self.board.board_for_track_end)

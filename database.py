@@ -24,6 +24,3 @@ class DatabaseManager:
         else:
             self.cursor.execute(query)
         return self.cursor.fetchall()
-
-    def close_connection(self):
-        self.conn.close()

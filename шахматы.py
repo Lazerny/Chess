@@ -1,7 +1,6 @@
 from stockfish import Stockfish
 import chess
 
-# скачать картинки: https://disk.yandex.ru/d/yBSyEyOMVCguwg
 WHITE = 1
 BLACK = 2
 cords_black_king = (7, 4)
@@ -89,9 +88,7 @@ class Board:
                 Queen(BLACK), Bishop(BLACK), Knight(BLACK), Rook(BLACK)
             ]
 
-    # def __str__(self):
-    #     return Main.print_board(board=self)
-
+    # проверка мата
     def checkmate(self):
         # 1 Атаковано ли поле с королём? Если нет, то не мат.
         # 2 Атакованы ли соседние с королём и свободные от его фигур поля? Если нет, то не мат.
@@ -102,9 +99,11 @@ class Board:
         # 7 Можно ли перекрыть линию атаки? Если да, то не мат. Иначе - мат.
         return self.board_for_track_end.is_checkmate()
 
+    # проверка пата
     def stalemate(self):
         return self.board_for_track_end.is_stalemate()
 
+    # можно ли закончить игру?
     def is_insufficient_material(self):
         return self.board_for_track_end.is_insufficient_material()
 
