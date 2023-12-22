@@ -1,10 +1,10 @@
-import sqlite3
+from database import DatabaseManager
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QStatusBar, QGridLayout
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QLabel, QStatusBar
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt, QEventLoop, QCoreApplication, QEvent
+from PyQt5.QtCore import Qt
 from PyQt5 import uic
-from шахматы import Board, opponent
+from шахматы import Board, opponent, Bot
 
 
 class Main(QWidget):
@@ -22,33 +22,60 @@ class Main(QWidget):
         self.setMinimumSize(430, 430)  # Минимальный размер окна
         self.setMaximumSize(1044, 1044)  # Максимальный размер окна
         self.setGeometry(600, 30, 1044, 1044)  # Начальный размер окна
-
+        f = open('theme.txt', 'r')
+        self.root = f.read().split()
+        f.close()
         self.piece_images = {
-            'wQ': QPixmap('ChessImage/whiteQueen.png'),
-            'wR': QPixmap('ChessImage/whiteRook.png'),
-            'wN': QPixmap('ChessImage/whiteKnight.png'),
-            'wB': QPixmap('ChessImage/whiteBishop.png'),
-            'wK': QPixmap('ChessImage/whiteKing.png'),
-            'wP': QPixmap('ChessImage/whitePawn.png'),
-            'bQ': QPixmap('ChessImage/blackQueen.png'),
-            'bR': QPixmap('ChessImage/blackRook.png'),
-            'bN': QPixmap('ChessImage/blackKnight.png'),
-            'bB': QPixmap('ChessImage/blackBishop.png'),
-            'bK': QPixmap('ChessImage/blackKing.png'),
-            'bP': QPixmap('ChessImage/blackPawn.png'),
+            'wQ': QPixmap(f'ChessImage/{self.root[0]}/wQ.png'),
+            'wR': QPixmap(f'ChessImage/{self.root[0]}/wR.png'),
+            'wN': QPixmap(f'ChessImage/{self.root[0]}/wN.png'),
+            'wB': QPixmap(f'ChessImage/{self.root[0]}/wB.png'),
+            'wK': QPixmap(f'ChessImage/{self.root[0]}/wK.png'),
+            'wP': QPixmap(f'ChessImage/{self.root[0]}/wP.png'),
+            'bQ': QPixmap(f'ChessImage/{self.root[0]}/bQ.png'),
+            'bR': QPixmap(f'ChessImage/{self.root[0]}/bR.png'),
+            'bN': QPixmap(f'ChessImage/{self.root[0]}/bN.png'),
+            'bB': QPixmap(f'ChessImage/{self.root[0]}/bB.png'),
+            'bK': QPixmap(f'ChessImage/{self.root[0]}/bK.png'),
+            'bP': QPixmap(f'ChessImage/{self.root[0]}/bP.png'),
         }
 
         #  Создаем QLabel для фонового изображения
         self.label_background = QLabel(self)
-        self.pixmap_background = QPixmap('ChessImage/blue-marble.jpg')
+        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.jpg')
         self.label_background.setPixmap(self.pixmap_background)
         self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
-    def start_and_get_info(self, color, login):
+    def start_and_get_info(self, color, login, play_with_bot, level_bot):
+        self.play_with_bot = play_with_bot
+        if self.play_with_bot:
+            self.bot = Bot(level_bot)
         self.board = Board(color)
         self.print_board(self.board)
         self.color = color
         self.login = login
+
+    def change_design(self):
+        f = open('theme.txt', 'r')
+        self.root = f.read().split()
+        f.close()
+        self.piece_images = {
+            'wQ': QPixmap(f'ChessImage/{self.root[0]}/wQ.png'),
+            'wR': QPixmap(f'ChessImage/{self.root[0]}/wR.png'),
+            'wN': QPixmap(f'ChessImage/{self.root[0]}/wN.png'),
+            'wB': QPixmap(f'ChessImage/{self.root[0]}/wB.png'),
+            'wK': QPixmap(f'ChessImage/{self.root[0]}/wK.png'),
+            'wP': QPixmap(f'ChessImage/{self.root[0]}/wP.png'),
+            'bQ': QPixmap(f'ChessImage/{self.root[0]}/bQ.png'),
+            'bR': QPixmap(f'ChessImage/{self.root[0]}/bR.png'),
+            'bN': QPixmap(f'ChessImage/{self.root[0]}/bN.png'),
+            'bB': QPixmap(f'ChessImage/{self.root[0]}/bB.png'),
+            'bK': QPixmap(f'ChessImage/{self.root[0]}/bK.png'),
+            'bP': QPixmap(f'ChessImage/{self.root[0]}/bP.png'),
+        }
+        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.jpg')
+        self.label_background.setPixmap(self.pixmap_background)
+        self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
     def resizeEvent(self, event):
         # масштабирование заднего фона(доски)
@@ -94,12 +121,13 @@ class Main(QWidget):
                 # print(f"cord1: {self.cord1}")
                 # print(pos_in_board)
 
-
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.cord2 = (self.x, self.y)
             # print(f"cord2: {self.cord2}")
             self.run()
+            if self.color != self.board.color and self.play_with_bot:
+                self.run()
 
     def print_board(self, board):
         for key in self.pieces:
@@ -123,91 +151,168 @@ class Main(QWidget):
                 cord_x += self.width() // 8
             cord_y -= self.height() // 8
 
-    def run(self):
+    def handle_castling(self, row, col, row1, col1, move):
+        def update_pos():
+            if self.play_with_bot:
+                self.bot.update_position(move)
+
+        if self.color == 1:
+            if (row == 0 and col == 4 and row1 == 0 and col1 == 2) or (
+                    row == 7 and col == 4 and row1 == 7 and col1 == 2):
+                if self.board.castling_long(row, 4, 0):
+                    update_pos()
+            elif (row == 0 and col == 4 and row1 == 0 and col1 == 6) or (
+                    row == 7 and col == 4 and row1 == 7 and col1 == 6):
+                if self.board.castling_short(row, 4, 7):
+                    update_pos()
+        else:
+            if (row == 0 and col == 3 and row1 == 0 and col1 == 5) or (
+                    row == 7 and col == 3 and row1 == 7 and col1 == 5):
+                if self.board.castling_long(row, 3, 7):
+                    update_pos()
+            elif (row == 0 and col == 3 and row1 == 0 and col1 == 1) or (
+                    row == 7 and col == 3 and row1 == 7 and col1 == 1):
+                if self.board.castling_short(row, 3, 0):
+                    update_pos()
+
+    def handle_bot_move(self, col_names_rev):
+        move = self.bot.get_best_move()
+        cell1 = move[:2]
+        cell2 = move[2:4]
+        if self.color == 1:
+            col = col_names_rev.get(cell1[0])
+            col1 = col_names_rev.get(cell2[0])
+            row = int(cell1[1]) - 1
+            row1 = int(cell2[1]) - 1
+        else:
+            col = 7 - col_names_rev.get(cell1[0])
+            col1 = 7 - col_names_rev.get(cell2[0])
+            row = 8 - int(cell1[1])
+            row1 = 8 - int(cell2[1])
+        return row, col, row1, col1, move
+
+    def handle_human_move(self, col_names):
         row, col = self.get_cord_mouse(self.cord1)
         row1, col1 = self.get_cord_mouse(self.cord2)
-        # print(row, col)
-        # print(row1, col1)
-        if row == 0 and col == 4 and row1 == 0 and col1 == 0:
-            self.board.castling0()
-        elif row == 7 and col == 4 and row1 == 7 and col1 == 0:
-            self.board.castling0()
-        elif row == 0 and col == 4 and row1 == 0 and col1 == 7:
-            self.board.castling7()
-        elif row == 7 and col == 4 and row1 == 7 and col1 == 7:
-            self.board.castling7()
-        elif row1 == 7 or row1 == 0:
+        if self.color == 1:
+            move = f"{col_names[col]}{row + 1}{col_names[col1]}{row1 + 1}"
+        else:
+            move = f"{col_names[7 - col]}{8 - row}{col_names[7 - col1]}{8 - row1}"
+        return row, col, row1, col1, move
+
+    def run(self):
+        names_col = {0: 'a',
+                     1: 'b',
+                     2: 'c',
+                     3: 'd',
+                     4: 'e',
+                     5: 'f',
+                     6: 'g',
+                     7: 'h'}
+
+        names_col_rew = {'a': 0,
+                         'b': 1,
+                         'c': 2,
+                         'd': 3,
+                         'e': 4,
+                         'f': 5,
+                         'g': 6,
+                         'h': 7}
+        if self.color != self.board.color and self.play_with_bot:
+            row, col, row1, col1, move = self.handle_bot_move(names_col_rew)
+        else:
+            row, col, row1, col1, move = self.handle_human_move(names_col)
+        self.handle_castling(row, col, row1, col1, move)
+        # promote pawn
+        if row1 == 7 or row1 == 0:
             piece = self.board.field[row][col]
-            if piece.char() == 'P' and self.board.move_piece(row, col, row1, col1):
-                # print('Превращение на координате', row1, col1)
-                color_who_promote = 'w' if opponent(self.board.color) == 1 else 'b'
-                step = self.width() // 8
-                top_left_point_x = step * col1
-                top_left_point_y = step * (7 - row1)
+            if piece:
+                if piece.char() == 'P' and self.board.move_piece(row, col, row1, col1):
+                    # print('Превращение на координате', row1, col1)
+                    color_who_promote = 'w' if opponent(self.board.color) == 1 else 'b'
+                    if self.color == self.board.color and self.play_with_bot:  # Если это бот
+                        self.bot.update_position(move)
+                        # print(move[2:4])
+                        char = self.bot.stockfish.get_what_is_on_square(move[2:4]).value.upper()
 
-                pixmaps_for_pieces_which_we_choose = {
-                    'wQ': QPixmap('ChessImage/Choose_piece/whiteQueen.png'),
-                    'wR': QPixmap('ChessImage/Choose_piece/whiteRook.png'),
-                    'wN': QPixmap('ChessImage/Choose_piece/whiteKnight.png'),
-                    'wB': QPixmap('ChessImage/Choose_piece/whiteBishop.png'),
-                    'bQ': QPixmap('ChessImage/Choose_piece/blackQueen.png'),
-                    'bR': QPixmap('ChessImage/Choose_piece/blackRook.png'),
-                    'bN': QPixmap('ChessImage/Choose_piece/blackKnight.png'),
-                    'bB': QPixmap('ChessImage/Choose_piece/blackBishop.png'),
-                }
-                names = [color_who_promote + 'Q',
-                         color_who_promote + 'R',
-                         color_who_promote + 'B',
-                         color_who_promote + 'N']
-                n = 0
-                list_to_clear = []
-                if row1 == 7:
-                    for y in range(0, step * 4, step):
-                        label = QLabel(self)
-                        label.setPixmap(
-                            pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
-                        label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
-                        list_to_clear.append(label)
-                        label.show()
-                        n += 1
-                else:
-                    for y in range(top_left_point_y, top_left_point_y - step * 4, -step):
-                        label = QLabel(self)
-                        label.setPixmap(
-                            pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
-                        label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
-                        list_to_clear.append(label)
-                        label.show()
-                        n += 1
+                    else:
+                        step = self.width() // 8
+                        top_left_point_x = step * col1
+                        top_left_point_y = step * (7 - row1)
 
-                choose_piese = False
-                try:
-                    while not choose_piese:
-                        QApplication.processEvents()
-                        mouse = self.get_cord_mouse(self.cord1)
-
-                        piece_mapping = {
-                            (7, col1): 'Q',
-                            (6, col1): 'R',
-                            (5, col1): 'B',
-                            (4, col1): 'N',
-                            (0, col1): 'Q',
-                            (1, col1): 'R',
-                            (2, col1): 'B',
-                            (3, col1): 'N',
+                        pixmaps_for_pieces_which_we_choose = {
+                            'wQ': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wQ.png'),
+                            'wR': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wR.png'),
+                            'wN': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wN.png'),
+                            'wB': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/wB.png'),
+                            'bQ': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bQ.png'),
+                            'bR': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bR.png'),
+                            'bN': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bN.png'),
+                            'bB': QPixmap(f'ChessImage/{self.root[0]}/Choose_piece/bB.png'),
                         }
+                        names = [color_who_promote + 'Q',
+                                 color_who_promote + 'R',
+                                 color_who_promote + 'B',
+                                 color_who_promote + 'N']
+                        n = 0
+                        list_to_clear = []
+                        if row1 == 7:
+                            for y in range(0, step * 4, step):
+                                label = QLabel(self)
+                                label.setPixmap(
+                                    pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
+                                label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
+                                list_to_clear.append(label)
+                                label.show()
+                                n += 1
+                        else:
+                            for y in range(top_left_point_y, top_left_point_y - step * 4, -step):
+                                label = QLabel(self)
+                                label.setPixmap(
+                                    pixmaps_for_pieces_which_we_choose.get(names[n]).scaledToWidth(self.width() // 8))
+                                label.setGeometry(top_left_point_x, y, self.width() // 8, self.width() // 8)
+                                list_to_clear.append(label)
+                                label.show()
+                                n += 1
 
-                        if mouse in piece_mapping:
-                            for i in list_to_clear:
-                                i.clear()
-                            char = piece_mapping[mouse]
-                            choose_piese = True
-                except Exception as e:
-                    print(e)
+                        choose_piese = False
+                        try:
+                            while not choose_piese:
+                                QApplication.processEvents()
+                                mouse = self.get_cord_mouse(self.cord1)
 
-                self.board.promote_pawn(row1, col1, char)
+                                piece_mapping = {
+                                    (7, col1): 'Q',
+                                    (6, col1): 'R',
+                                    (5, col1): 'B',
+                                    (4, col1): 'N',
+                                    (0, col1): 'Q',
+                                    (1, col1): 'R',
+                                    (2, col1): 'B',
+                                    (3, col1): 'N',
+                                }
 
-        self.board.move_piece(row, col, row1, col1)
+                                if mouse in piece_mapping:
+                                    for i in list_to_clear:
+                                        i.clear()
+                                    char = piece_mapping[mouse]
+                                    choose_piese = True
+                        except Exception as e:
+                            print(e)
+                        if self.play_with_bot:
+                            self.bot.update_position(move + char.lower())
+                    # print(char.lower())
+                    # print(move + char.lower())
+                    self.board.board_for_track_end.push_san(move + char)
+                    self.board.promote_pawn(row1, col1, char)
+        # update position
+        if self.board.move_piece(row, col, row1, col1):
+            self.board.board_for_track_end.push_san(move)
+            # print(self.board.board_for_track_end)
+            if self.play_with_bot:
+                self.bot.update_position(move)
+                # print(self.bot.stockfish.get_board_visual(perspective_white=True))
+
         self.print_board(self.board)
         if self.board.checkmate():
             try:
@@ -232,7 +337,85 @@ class Main(QWidget):
                     db.execute_query(query, params)
             except Exception as e:
                 print(e)
-            print('Checkmate!')
+            cm.show()
+            # print('Checkmate!')
+
+        if self.board.stalemate() or self.board.is_insufficient_material():
+            sm.show()
+
+
+class ChoosePiecesDesign(QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('choose pieces design.ui', self)
+        self.pushButton.clicked.connect(self.change_pieces_1)
+        self.pushButton_2.clicked.connect(self.change_pieces_2)
+        self.get_back.clicked.connect(self.back)
+        self.setFixedSize(self.width(), self.height())
+        self.label.setPixmap(QPixmap('ChessImage/cburnett/bN.png'))
+        self.label_2.setPixmap(QPixmap('ChessImage/riohacha/bN.png'))
+
+    def change_pieces_1(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        board = data.split()[-1]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write('cburnett ' + board)
+        mw.change_design()
+
+    def change_pieces_2(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        board = data.split()[-1]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write('riohacha ' + board)
+        mw.change_design()
+
+    def reference_show(self):
+        self.hide()
+        ss.show()
+
+    def back(self):
+        self.hide()
+        fw.show()
+
+
+class ChooseBoardDesign(QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('choose board design.ui', self)
+        self.pushButton.clicked.connect(self.change_pieces_1)
+        self.pushButton_2.clicked.connect(self.change_pieces_2)
+        self.get_back.clicked.connect(self.back)
+        self.setFixedSize(self.width(), self.height())
+        self.label.setPixmap(
+            QPixmap('ChessImage/cburnett/marble.jpg').scaledToWidth(1044 // 2).scaledToHeight(1044 // 2))
+        self.label_2.setPixmap(
+            QPixmap('ChessImage/riohacha/marble.jpg').scaledToWidth(1044 // 2).scaledToHeight(1044 // 2))
+
+    def change_pieces_1(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        piece = data.split()[0]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write(piece + ' cburnett')
+        mw.change_design()
+
+    def change_pieces_2(self):
+        with open('theme.txt', 'r', encoding='utf-8', ) as f:
+            data = f.read()
+        piece = data.split()[0]
+        with open('theme.txt', 'w', encoding='utf-8', ) as f:
+            f.write(piece + ' riohacha')
+        mw.change_design()
+
+    def reference_show(self):
+        self.hide()
+        ss.show()
+
+    def back(self):
+        self.hide()
+        fw.show()
 
 
 class FirstWindow(QWidget):
@@ -241,7 +424,7 @@ class FirstWindow(QWidget):
         uic.loadUi('first window.ui', self)
         self.playWithFriend.clicked.connect(self.play_with_friend_def)
         self.playWithBot.clicked.connect(self.play_with_bot_def)
-        self.reference.clicked.connect(self.reference_def)
+        self.settings.clicked.connect(self.settings_def)
         self.setFixedSize(self.width(), self.height())
 
     def play_with_friend_def(self):
@@ -250,18 +433,45 @@ class FirstWindow(QWidget):
 
     def play_with_bot_def(self):
         self.hide()
-        sw.show()
+        swvb.show()
 
-    def reference_def(self):
+    def settings_def(self):
+        self.hide()
+        ss.show()
+
+
+class Settings(QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('settings.ui', self)
+        self.pieses.clicked.connect(self.change_pieces)
+        self.board.clicked.connect(self.change_board)
+        self.reference.clicked.connect(self.reference_show)
+        self.get_back.clicked.connect(self.back)
+        self.setFixedSize(self.width(), self.height())
+
+    def change_pieces(self):
+        self.hide()
+        pd.show()
+
+    def change_board(self):
+        self.hide()
+        bd.show()
+
+    def reference_show(self):
         r.show()
+
+    def back(self):
+        self.hide()
+        fw.show()
 
 
 class Reference(QWidget):
     def __init__(self):
         super().__init__()
-        self.init_ui()
+        self.initUI()
 
-    def init_ui(self):
+    def initUI(self):
         layout = QVBoxLayout()
         rules_text = self.load_rules_from_file("reference.txt")
         rules_label = QLabel(rules_text)
@@ -293,10 +503,9 @@ class SecondWindow(QWidget):
         self.setFixedSize(self.width(), self.height())
         self.pushButton.clicked.connect(self.run)
 
-    def run(self, color):
+    def run(self, color, level_bot=0, flag=False):
         try:
             if not self.login.text() and not self.password.text():
-                # self.status_bar.setVisible(True)
                 self.status_bar.showMessage('Введите своё имя и приудмайте пароль!')
             elif not self.password.text():
                 self.status_bar.showMessage('Введите пароль!')
@@ -321,7 +530,7 @@ class SecondWindow(QWidget):
 
                         self.hide()
                         color = 1 if self.White.isChecked() else 2
-                        mw.start_and_get_info(color, self.login.text())
+                        mw.start_and_get_info(color, self.login.text(), flag, level_bot)
                         mw.show()
                         return
 
@@ -337,38 +546,57 @@ class SecondWindow(QWidget):
 
                 color = 1 if self.White.isChecked() else 2
                 self.hide()
-                mw.start_and_get_info(color, self.login.text())
+                mw.start_and_get_info(color, self.login.text(), flag, level_bot)
                 mw.show()
         except Exception as e:
             print(e)
 
 
-class DatabaseManager:
-    def __init__(self, db_name='Chess.sqlite'):
-        self.conn = sqlite3.connect(db_name)
-        self.cursor = self.conn.cursor()
+class SecondWindowVsBot(SecondWindow):
+    def initUI(self):
+        uic.loadUi('second window vs bot.ui', self)
+        self.setFixedSize(self.width(), self.height())
+        self.level_bot.valueChanged.connect(self.change_level)
+        self.status_bar = QStatusBar(self)
+        self.status_bar.setGeometry(0, self.height() - 25, self.width(), 25)
+        self.setFixedSize(self.width(), self.height())
+        self.pushButton.clicked.connect(self.run)
 
-    def execute_query(self, query, params=None):
-        try:
-            if params:
-                result = self.cursor.execute(query, params).fetchall()
-            else:
-                result = self.cursor.execute(query)
-            self.conn.commit()
-            return result
+    def change_level(self):
+        self.level.setText(str(self.level_bot.value()))
 
-        except Exception as e:
-            print(e)
+    def run(self, color, level_bot=0, flag=True):
+        super().run(color, self.level_bot.value(), flag)
 
-    def fetch_data(self, query, params=None):
-        if params:
-            self.cursor.execute(query, params)
-        else:
-            self.cursor.execute(query)
-        return self.cursor.fetchall()
 
-    def close_connection(self):
-        self.conn.close()
+class Checkmate(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        uic.loadUi('Checkmate.ui', self)
+        self.get_back.clicked.connect(self.run)
+
+    def run(self):
+        mw.hide()
+        cm.hide()
+        fw.show()
+
+
+class Stalemate(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        uic.loadUi('stalemate.ui', self)
+        self.get_back.clicked.connect(self.run)
+
+    def run(self):
+        mw.hide()
+        sm.hide()
+        fw.show()
 
 
 if __name__ == '__main__':
@@ -377,5 +605,11 @@ if __name__ == '__main__':
     sw = SecondWindow()  # Second window
     mw = Main()  # Main window
     r = Reference()  # Reference
+    cm = Checkmate()  # Checkmate
+    sm = Stalemate()  # Stalemate
+    swvb = SecondWindowVsBot()  # SecondWindowVsBot
+    ss = Settings()  # Settings
+    pd = ChoosePiecesDesign()  # Pieces design
+    bd = ChooseBoardDesign()  # Board design
     fw.show()
     sys.exit(app.exec_())
