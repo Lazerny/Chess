@@ -42,7 +42,7 @@ class Main(QWidget):
 
         #  Создаем QLabel для фонового изображения
         self.label_background = QLabel(self)
-        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.png')
+        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.jpg')
         self.label_background.setPixmap(self.pixmap_background)
         self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
@@ -73,7 +73,7 @@ class Main(QWidget):
             'bK': QPixmap(f'ChessImage/{self.root[0]}/bK.png'),
             'bP': QPixmap(f'ChessImage/{self.root[0]}/bP.png'),
         }
-        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.png')
+        self.pixmap_background = QPixmap(f'ChessImage/{self.root[1]}/marble.jpg')
         self.label_background.setPixmap(self.pixmap_background)
         self.label_background.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
@@ -388,8 +388,10 @@ class ChooseBoardDesign(QWidget):
         self.pushButton_2.clicked.connect(self.change_pieces_2)
         self.get_back.clicked.connect(self.back)
         self.setFixedSize(self.width(), self.height())
-        self.label.setPixmap(QPixmap('ChessImage/cburnett/marble.jpg'))
-        self.label_2.setPixmap(QPixmap('ChessImage/riohacha/marble.jpg'))
+        self.label.setPixmap(
+            QPixmap('ChessImage/cburnett/marble.jpg').scaledToWidth(1044 // 2).scaledToHeight(1044 // 2))
+        self.label_2.setPixmap(
+            QPixmap('ChessImage/riohacha/marble.jpg').scaledToWidth(1044 // 2).scaledToHeight(1044 // 2))
 
     def change_pieces_1(self):
         with open('theme.txt', 'r', encoding='utf-8', ) as f:
